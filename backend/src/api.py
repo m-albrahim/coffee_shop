@@ -58,22 +58,16 @@ def create_drink(payload):
 @app.route('/drinks/<int:id>', methods=['PATCH'])
 @requires_auth('patch:drinks')
 def update_drink(payload, id):
-    body = request.get_json()
-    if not ('title' in body):
-        abort(422)
-    req_title = body.get('title', None)
-
-    drink = Drink.query.filter(Drink.id == id).one_or_none()
+    drink = Drink.query.get(id)
     if drink is None:
-        abort(400)
+        return abort(404)
 
-    drink.title = req_title
+    drinkInfo = drink.long()
+    recipe = request.json.get('recipe', drinkInfo['recipe'])
+    drink.title = request.json.get('title', drinkInfo['title'])
+    drink.recipe = json.dumps(recipe)
     drink.update()
-
-    return jsonify({
-        "success": True,
-        "drinks": drink.long()
-    }), 200
+    return jsonify({'success': True, 'drinks': [drink.long()]})
 
 @app.route('/drinks/<int:id>', methods=['DELETE'])
 @requires_auth('delete:drinks')
